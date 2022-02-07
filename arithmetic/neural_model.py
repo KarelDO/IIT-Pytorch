@@ -75,7 +75,7 @@ class NeuralArithmetic(torch.nn.Module):
 
     def _convert_to_onehot(self, input):
         # input [batch, 1]
-        onehot = torch.zeros((input.shape[0], self.onehot_width))
+        onehot = torch.zeros((input.shape[0], self.onehot_width), device=input.device)
         onehot[range(input.shape[0]), input] = 1
         return onehot
 
