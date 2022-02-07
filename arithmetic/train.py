@@ -209,7 +209,7 @@ if __name__ == "__main__":
     neural_model, causal_model, ds_train, ds_test, task_criterion, iit_criterion, optimizer = prepare_training(
         config)
 
-    with wandb.init(project='causal-arithmetic', config=config):
+    with wandb.init(project='causal-arithmetic', entity='stanford-causality', config=config):
         config = wandb.config
         train_with_interventions(
             neural_model, causal_model, ds_train, ds_test, task_criterion, iit_criterion, optimizer, config)
