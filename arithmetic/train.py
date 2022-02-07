@@ -22,7 +22,7 @@ def ii_accuracy(neural_model, causal_model, alignment, ds, config):
     correct = 0
     for i in range(len(dl)):
         x, y = dl.next()
-
+        x, y = x.to(config['device']), y.to(config['device'])
         # get source and base
         halfway_point = math.floor(x.shape[0]/2)
 
@@ -46,13 +46,13 @@ def ii_accuracy(neural_model, causal_model, alignment, ds, config):
     return correct, acc
 
 
-def eval(model, ds):
+def eval(model, ds, config):
     model.model.eval()
 
     task_criterion = torch.nn.CrossEntropyLoss()
 
-    predict = model.model(ds.x)
-    loss = task_criterion(predict, ds.y)
+    predict = model.model(ds.x.to(config['device']))
+    loss = task_criterion(predict, ds.y.to(config['device']))
 
     model.model.train()
 
@@ -67,13 +67,13 @@ def train_log(epoch, len_ds, running_task_loss, running_iit_loss):
     print(f'[epoch {epoch + 1}] iit loss: {iit_loss:.3f}')
 
 
-def eval_log(epoch, ds_test, neural_model, causal_model, alignments):
-    test_task_loss, prediction = eval(neural_model, ds_test)
+def eval_log(epoch, ds_test, neural_model, causal_model, config):
+    test_task_loss, prediction = eval(neural_model, ds_test, config)
 
     wandb.log({"test loss": test_task_loss}, step=epoch)
     print(f'[epoch {epoch + 1}] test loss: {test_task_loss:.3f}')
 
-    for alignment in alignments:
+    for alignment in config['alignments']:
         correct, acc = ii_accuracy(
             neural_model, causal_model, alignment, ds_test, config)
         wandb.log({f"ii  accuracy {alignment}": acc}, step=epoch)
@@ -84,10 +84,10 @@ def eval_log(epoch, ds_test, neural_model, causal_model, alignments):
     test_table = wandb.Table(data=test_data, columns=test_columns)
     wandb.log({"test_table": test_table}, step=epoch)
 
-    error_data = prediction - ds_test.y
-    wandb.log({"error_histogram": wandb.Histogram(error_data)}, step=epoch)
+    error_data = prediction - ds_test.y.to(config['device'])
+    wandb.log({"error_histogram": wandb.Histogram(error_data.cpu())}, step=epoch)
 
-    accuracy = sum(prediction == ds_test.y)/len(ds_test.y)
+    accuracy = sum(prediction == ds_test.y.to(config['device']))/len(ds_test.y.to(config['device']))
     wandb.log({"test accuracy": accuracy}, step=epoch)
 
 
@@ -168,7 +168,7 @@ def train_with_interventions(neural_model, causal_model, ds_train, ds_test, task
 
         if epoch % config['eval_freq'] == 0:
             eval_log(epoch, ds_test, neural_model,
-                     causal_model, config['alignments'])
+                     causal_model, config)
 
     torch.onnx.export(neural_model.model, x,
                       "neural_model.onnx", opset_version=11)
