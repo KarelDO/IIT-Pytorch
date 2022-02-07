@@ -9,6 +9,7 @@ from neural_model import NeuralArithmetic
 from interventionable import Interventionable
 import wandb
 import pyhocon
+import time
 
 
 def ii_accuracy(neural_model, causal_model, alignment, ds, config):
@@ -123,6 +124,8 @@ def train_with_interventions(neural_model, causal_model, ds_train, ds_test, task
     running_task_loss = 0.0
     running_iit_loss = 0.0
 
+    t1 = time.time()
+
     for epoch in range(config['epochs']):
         dl = iter(torch.utils.data.DataLoader(
             ds_train, batch_size=config['batch_size'], shuffle=True))
@@ -167,6 +170,7 @@ def train_with_interventions(neural_model, causal_model, ds_train, ds_test, task
         running_iit_loss = 0.0
 
         if epoch % config['eval_freq'] == 0:
+            wandb.log({"time": time.time() - t1},step=epoch)
             eval_log(epoch, ds_test, neural_model,
                      causal_model, config)
 
