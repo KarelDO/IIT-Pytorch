@@ -1,0 +1,3 @@
+**/**.onnx
+**/wandb
+**/__pycache__/

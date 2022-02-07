@@ -2,17 +2,17 @@ from turtle import forward
 import torch
 
 class NeuralArithmetic(torch.nn.Module):
-    def __init__(self, onehot_width, hidden_width):
+    def __init__(self, onehot_width=None, model_hidden_width=None):
         super().__init__()
 
         self.onehot_width = onehot_width
-        self.hidden_width = hidden_width
+        self.model_hidden_width = model_hidden_width
 
-        self.embed = torch.nn.Linear(self.onehot_width, self.hidden_width)
+        self.embed = torch.nn.Linear(self.onehot_width, self.model_hidden_width)
 
-        self.ff1 = torch.nn.Linear(3*self.hidden_width,3*self.hidden_width)
-        self.ff2 = torch.nn.Linear(3*self.hidden_width,3*self.hidden_width)
-        self.ff3 = torch.nn.Linear(3*self.hidden_width,3*self.onehot_width)
+        self.ff1 = torch.nn.Linear(3*self.model_hidden_width,3*self.model_hidden_width)
+        self.ff2 = torch.nn.Linear(3*self.model_hidden_width,3*self.model_hidden_width)
+        self.ff3 = torch.nn.Linear(3*self.model_hidden_width,3*self.onehot_width)
 
         # self.act1 = torch.nn.ReLU()
         self.act1 = torch.nn.Tanh()
@@ -55,14 +55,14 @@ class NeuralArithmetic(torch.nn.Module):
         x = self.act1(self.ff1(x))
 
         # making the slices of the layers more accessible for interventions
-        a,b,c = x[:,0:self.hidden_width], x[:,self.hidden_width:2*self.hidden_width], x[:,2*self.hidden_width:3*self.hidden_width]
+        a,b,c = x[:,0:self.model_hidden_width], x[:,self.model_hidden_width:2*self.model_hidden_width], x[:,2*self.model_hidden_width:3*self.model_hidden_width]
         a,b,c = self.identity_a(a), self.identity_b(b), self.identity_c(c)
         x = torch.cat((a,b,c), dim=1)
 
         x = self.act2(self.ff2(x))
 
         # making the slices of the layers more accessible for interventions
-        d,e,f = x[:,0:self.hidden_width], x[:,self.hidden_width:2*self.hidden_width], x[:,2*self.hidden_width:3*self.hidden_width]
+        d,e,f = x[:,0:self.model_hidden_width], x[:,self.model_hidden_width:2*self.model_hidden_width], x[:,2*self.model_hidden_width:3*self.model_hidden_width]
         d,e,f = self.identity_d(d), self.identity_e(e), self.identity_f(f)
         x = torch.cat((d,e,f), dim=1)
 
