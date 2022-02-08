@@ -16,8 +16,6 @@ import sys
 def ii_accuracy(neural_model, causal_model, alignment, ds, config):
     neural_model.model.eval()
 
-    print(neural_model)
-
     neural_node, causal_node = alignment
 
     dl = iter(torch.utils.data.DataLoader(
@@ -99,6 +97,8 @@ def prepare_training(config):
     # create causal and neural model
     neural_model = Interventionable(NeuralArithmetic(config).to(config['device']))
     causal_model = Interventionable(CausalArithmetic(config).to(config['device']))
+
+    print(neural_model)
 
     # create test and train set
     ds_train = ArithmeticDataset(
