@@ -98,7 +98,7 @@ def prepare_training(config):
     neural_model = Interventionable(NeuralArithmetic(config).to(config['device']))
     causal_model = Interventionable(CausalArithmetic(config).to(config['device']))
 
-    print(neural_model)
+    print(neural_model.model)
 
     # create test and train set
     ds_train = ArithmeticDataset(
