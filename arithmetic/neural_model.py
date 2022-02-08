@@ -16,14 +16,14 @@ class NeuralArithmetic(torch.nn.Module):
             3*self.model_hidden_width, 3*self.model_hidden_width)
 
         self.act1 = torch.nn.Tanh(
-        ) if config['activation'] == "tanh" else torch.nn.ReLU()
+        ) if config['activation'] == "tanh" else torch.nn.LeakyReLU()
 
         layers = []
         for i in range(config['model_hidden_layers']):
             layers.append(torch.nn.Linear(
                 3*self.model_hidden_width, 3*self.model_hidden_width))
             layers.append(torch.nn.Tanh()
-                          if config['activation'] == "tanh" else torch.nn.ReLU())
+                          if config['activation'] == "tanh" else torch.nn.LeakyReLU())
         self.ff2 = torch.nn.Sequential(*layers)
 
         layers = []
@@ -31,7 +31,7 @@ class NeuralArithmetic(torch.nn.Module):
             layers.append(torch.nn.Linear(
                 3*self.model_hidden_width, 3*self.model_hidden_width))
             layers.append(torch.nn.Tanh()
-                          if config['activation'] == "tanh" else torch.nn.ReLU())
+                          if config['activation'] == "tanh" else torch.nn.LeakyReLU())
         self.ff3 = torch.nn.Sequential(*layers[:-1])
 
         # some magic to easily access parts of the layers
@@ -112,14 +112,14 @@ class NeuralArithmetic2(torch.nn.Module):
             4*self.model_hidden_width, 4*self.model_hidden_width)
 
         self.act1 = torch.nn.Tanh(
-        ) if config['activation'] == "tanh" else torch.nn.ReLU()
+        ) if config['activation'] == "tanh" else torch.nn.LeakyReLU()
 
         layers = []
         for i in range(config['model_hidden_layers']):
             layers.append(torch.nn.Linear(
                 4*self.model_hidden_width, 4*self.model_hidden_width))
             layers.append(torch.nn.Tanh()
-                          if config['activation'] == "tanh" else torch.nn.ReLU())
+                          if config['activation'] == "tanh" else torch.nn.LeakyReLU())
         self.ff2 = torch.nn.Sequential(*layers)
 
         layers = []
@@ -127,7 +127,7 @@ class NeuralArithmetic2(torch.nn.Module):
             layers.append(torch.nn.Linear(
                 4*self.model_hidden_width, 4*self.model_hidden_width))
             layers.append(torch.nn.Tanh()
-                          if config['activation'] == "tanh" else torch.nn.ReLU())
+                          if config['activation'] == "tanh" else torch.nn.LeakyReLU())
         self.ff3 = torch.nn.Sequential(*layers[:-1])
 
         # some magic to easily access parts of the layers
