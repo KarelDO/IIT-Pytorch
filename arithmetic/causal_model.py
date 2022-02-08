@@ -43,6 +43,11 @@ class CausalArithmetic2(torch.nn.Module):
 
         self.S1 = torch.nn.Identity()
         self.S2 = torch.nn.Identity()
+
+        self.C1 = torch.nn.Identity()
+        self.C2 = torch.nn.Identity()
+        self.C3 = torch.nn.Identity()
+
         self.O = torch.nn.Identity()
 
     def forward(self, input):
@@ -57,6 +62,9 @@ class CausalArithmetic2(torch.nn.Module):
         z = self.z(z)
 
         S1 = self.S1(w + x)
-        S2 = self.S2(S1 + y)
-        O = self.O(S2 + z)
+        C1 = self.C1(y)
+        C2 = self.C2(z)
+        S2 = self.S2(S1 + C1)
+        C3 = self.C3(C2)
+        O = self.O(S2 + C3)
         return O
