@@ -41,7 +41,7 @@ def ii_accuracy(neural_model, causal_model, alignment, ds, config):
 
             correct += sum(predict_labels == target_intervention)
 
-    acc = 50 * correct / len(ds)
+    acc = 100 * correct / (len(ds)/2)
 
     neural_model.model.train()
 
