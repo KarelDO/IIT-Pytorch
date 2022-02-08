@@ -3,9 +3,9 @@ import torch
 import random
 import numpy as np
 import math
-from dataset import ArithmeticDataset
-from causal_model import CausalArithmetic
-from neural_model import NeuralArithmetic
+from dataset import ArithmeticDataset2
+from causal_model import CausalArithmetic2
+from neural_model import NeuralArithmetic2
 from interventionable import Interventionable
 import wandb
 import pyhocon
@@ -95,15 +95,15 @@ def eval_log(epoch, ds_test, neural_model, causal_model, config):
 
 def prepare_training(config):
     # create causal and neural model
-    neural_model = Interventionable(NeuralArithmetic(config).to(config['device']))
-    causal_model = Interventionable(CausalArithmetic(config).to(config['device']))
+    neural_model = Interventionable(NeuralArithmetic2(config).to(config['device']))
+    causal_model = Interventionable(CausalArithmetic2(config).to(config['device']))
 
     print(neural_model.model)
 
     # create test and train set
-    ds_train = ArithmeticDataset(
+    ds_train = ArithmeticDataset2(
         size=config['dataset_train_size'], highest_number=config['dataset_highest_number'])
-    ds_test = ArithmeticDataset(
+    ds_test = ArithmeticDataset2(
         size=config['dataset_test_size'], highest_number=config['dataset_highest_number'])
 
     # criterions

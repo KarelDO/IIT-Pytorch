@@ -1,5 +1,6 @@
 import torch
 
+
 class CausalArithmetic(torch.nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -10,7 +11,7 @@ class CausalArithmetic(torch.nn.Module):
         self.S = torch.nn.Identity()
         self.O = torch.nn.Identity()
 
-    def forward(self,input):
+    def forward(self, input):
         # We multiply each intermediate value with a trivial layer
         # This allows us to attach hooks to the inttermediate values
 
@@ -19,9 +20,9 @@ class CausalArithmetic(torch.nn.Module):
         # while this is not needed because the model won't be trained?
 
         # NOTE: without copying, the intervention also changes the input tensor if we intervene on x,y, or z.
-        x = torch.clone(input[:,0])
-        y = torch.clone(input[:,1])
-        z = torch.clone(input[:,2])
+        x = torch.clone(input[:, 0])
+        y = torch.clone(input[:, 1])
+        z = torch.clone(input[:, 2])
 
         x = self.x(x)
         y = self.y(y)
@@ -29,4 +30,33 @@ class CausalArithmetic(torch.nn.Module):
 
         S = self.S(x + y)
         O = self.O(S + z)
+        return O
+
+
+class CausalArithmetic2(torch.nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.w = torch.nn.Identity()
+        self.x = torch.nn.Identity()
+        self.y = torch.nn.Identity()
+        self.z = torch.nn.Identity()
+
+        self.S1 = torch.nn.Identity()
+        self.S2 = torch.nn.Identity()
+        self.O = torch.nn.Identity()
+
+    def forward(self, input):
+        w = torch.clone(input[:, 0])
+        x = torch.clone(input[:, 1])
+        y = torch.clone(input[:, 2])
+        z = torch.clone(input[:, 3])
+
+        w = self.w(w)
+        x = self.x(x)
+        y = self.y(y)
+        z = self.z(z)
+
+        S1 = self.S1(w + x)
+        S2 = self.S2(S1 + y)
+        O = self.O(S2 + z)
         return O
