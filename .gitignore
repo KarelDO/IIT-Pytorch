@@ -1,3 +1,4 @@
 **/**.onnx
 **/wandb
 **/__pycache__/
+viz/

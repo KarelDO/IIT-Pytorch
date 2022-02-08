@@ -1,23 +1,30 @@
 from turtle import forward
 import torch
 
+
 class NeuralArithmetic(torch.nn.Module):
-    def __init__(self, onehot_width=None, model_hidden_width=None):
+    def __init__(self, config):
         super().__init__()
 
-        self.onehot_width = onehot_width
-        self.model_hidden_width = model_hidden_width
+        self.onehot_width = config['dataset_highest_number']
+        self.model_hidden_width = config['model_hidden_width']
 
-        self.embed = torch.nn.Linear(self.onehot_width, self.model_hidden_width)
+        self.embed = torch.nn.Linear(
+            self.onehot_width, self.model_hidden_width)
 
-        self.ff1 = torch.nn.Linear(3*self.model_hidden_width,3*self.model_hidden_width)
-        self.ff2 = torch.nn.Linear(3*self.model_hidden_width,3*self.model_hidden_width)
-        self.ff3 = torch.nn.Linear(3*self.model_hidden_width,3*self.onehot_width)
+        self.ff1 = torch.nn.Linear(
+            3*self.model_hidden_width, 3*self.model_hidden_width)
 
-        # self.act1 = torch.nn.ReLU()
+        layers = []
+        for i in range(config['model_hidden_layers']):
+            layers.append(torch.nn.Linear(
+                3*self.model_hidden_width, 3*self.model_hidden_width))
+            layers.append(torch.nn.Tanh())
+        self.ff2 = torch.nn.Sequential(*layers)
+        self.ff3 = torch.nn.Linear(
+            3*self.model_hidden_width, 3*self.onehot_width)
+
         self.act1 = torch.nn.Tanh()
-        # self.act2 = torch.nn.ReLU()
-        self.act2 = torch.nn.Tanh()
 
         # some magic to easily access parts of the layers
         self.identity_x = torch.nn.Identity()
@@ -36,9 +43,9 @@ class NeuralArithmetic(torch.nn.Module):
 
     def forward(self, input):
         # input [batch, 3]
-        x = input[:,0]
-        y = input[:,1]
-        z = input[:,2]
+        x = input[:, 0]
+        y = input[:, 1]
+        z = input[:, 2]
 
         x = self._convert_to_onehot(x)
         y = self._convert_to_onehot(y)
@@ -49,22 +56,24 @@ class NeuralArithmetic(torch.nn.Module):
         z = self.embed(z)
 
         # making the slices of the layers more accessible for interventions
-        x,y,z = self.identity_x(x), self.identity_y(y), self.identity_z(z)
+        x, y, z = self.identity_x(x), self.identity_y(y), self.identity_z(z)
 
-        x = torch.cat((x,y,z), dim=1)
+        x = torch.cat((x, y, z), dim=1)
         x = self.act1(self.ff1(x))
 
         # making the slices of the layers more accessible for interventions
-        a,b,c = x[:,0:self.model_hidden_width], x[:,self.model_hidden_width:2*self.model_hidden_width], x[:,2*self.model_hidden_width:3*self.model_hidden_width]
-        a,b,c = self.identity_a(a), self.identity_b(b), self.identity_c(c)
-        x = torch.cat((a,b,c), dim=1)
+        a, b, c = x[:, 0:self.model_hidden_width], x[:, self.model_hidden_width:2 *
+                                                     self.model_hidden_width], x[:, 2*self.model_hidden_width:3*self.model_hidden_width]
+        a, b, c = self.identity_a(a), self.identity_b(b), self.identity_c(c)
+        x = torch.cat((a, b, c), dim=1)
 
-        x = self.act2(self.ff2(x))
+        x = self.ff2(x)
 
         # making the slices of the layers more accessible for interventions
-        d,e,f = x[:,0:self.model_hidden_width], x[:,self.model_hidden_width:2*self.model_hidden_width], x[:,2*self.model_hidden_width:3*self.model_hidden_width]
-        d,e,f = self.identity_d(d), self.identity_e(e), self.identity_f(f)
-        x = torch.cat((d,e,f), dim=1)
+        d, e, f = x[:, 0:self.model_hidden_width], x[:, self.model_hidden_width:2 *
+                                                     self.model_hidden_width], x[:, 2*self.model_hidden_width:3*self.model_hidden_width]
+        d, e, f = self.identity_d(d), self.identity_e(e), self.identity_f(f)
+        x = torch.cat((d, e, f), dim=1)
 
         x = self.ff3(x)
 
@@ -75,7 +84,7 @@ class NeuralArithmetic(torch.nn.Module):
 
     def _convert_to_onehot(self, input):
         # input [batch, 1]
-        onehot = torch.zeros((input.shape[0], self.onehot_width), device=input.device)
+        onehot = torch.zeros(
+            (input.shape[0], self.onehot_width), device=input.device)
         onehot[range(input.shape[0]), input] = 1
         return onehot
-

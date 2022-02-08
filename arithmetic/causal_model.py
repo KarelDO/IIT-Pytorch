@@ -1,7 +1,7 @@
 import torch
 
 class CausalArithmetic(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, config):
         super().__init__()
         self.x = torch.nn.Identity()
         self.y = torch.nn.Identity()

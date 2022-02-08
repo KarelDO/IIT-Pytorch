@@ -95,9 +95,8 @@ def eval_log(epoch, ds_test, neural_model, causal_model, config):
 
 def prepare_training(config):
     # create causal and neural model
-    neural_model = Interventionable(NeuralArithmetic(
-        onehot_width=config['dataset_highest_number'], model_hidden_width=config['model_hidden_width']).to(config['device']))
-    causal_model = Interventionable(CausalArithmetic().to(config['device']))
+    neural_model = Interventionable(NeuralArithmetic(config).to(config['device']))
+    causal_model = Interventionable(CausalArithmetic(config).to(config['device']))
 
     # create test and train set
     ds_train = ArithmeticDataset(
