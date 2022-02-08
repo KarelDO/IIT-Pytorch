@@ -16,6 +16,8 @@ import sys
 def ii_accuracy(neural_model, causal_model, alignment, ds, config):
     neural_model.model.eval()
 
+    print(neural_model)
+
     neural_node, causal_node = alignment
 
     dl = iter(torch.utils.data.DataLoader(

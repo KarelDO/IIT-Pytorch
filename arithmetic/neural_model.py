@@ -21,8 +21,13 @@ class NeuralArithmetic(torch.nn.Module):
                 3*self.model_hidden_width, 3*self.model_hidden_width))
             layers.append(torch.nn.Tanh())
         self.ff2 = torch.nn.Sequential(*layers)
-        self.ff3 = torch.nn.Linear(
-            3*self.model_hidden_width, 3*self.onehot_width)
+
+        layers = []
+        for i in range(config['model_hidden_layers']):
+            layers.append(torch.nn.Linear(
+                3*self.model_hidden_width, 3*self.model_hidden_width))
+            layers.append(torch.nn.Tanh())
+        self.ff3 = torch.nn.Sequential(*layers[:-1])
 
         self.act1 = torch.nn.Tanh()
 
