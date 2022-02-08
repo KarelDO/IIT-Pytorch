@@ -15,21 +15,24 @@ class NeuralArithmetic(torch.nn.Module):
         self.ff1 = torch.nn.Linear(
             3*self.model_hidden_width, 3*self.model_hidden_width)
 
+        self.act1 = torch.nn.Tanh(
+        ) if config['activation'] == "tanh" else torch.nn.ReLU()
+
         layers = []
         for i in range(config['model_hidden_layers']):
             layers.append(torch.nn.Linear(
                 3*self.model_hidden_width, 3*self.model_hidden_width))
-            layers.append(torch.nn.Tanh())
+            layers.append(torch.nn.Tanh()
+                          if config['activation'] == "tanh" else torch.nn.ReLU())
         self.ff2 = torch.nn.Sequential(*layers)
 
         layers = []
         for i in range(config['model_hidden_layers']):
             layers.append(torch.nn.Linear(
                 3*self.model_hidden_width, 3*self.model_hidden_width))
-            layers.append(torch.nn.Tanh())
+            layers.append(torch.nn.Tanh()
+                          if config['activation'] == "tanh" else torch.nn.ReLU())
         self.ff3 = torch.nn.Sequential(*layers[:-1])
-
-        self.act1 = torch.nn.Tanh()
 
         # some magic to easily access parts of the layers
         self.identity_x = torch.nn.Identity()
