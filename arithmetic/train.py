@@ -10,6 +10,7 @@ from interventionable import Interventionable
 import wandb
 import pyhocon
 import time
+import sys
 
 
 def ii_accuracy(neural_model, causal_model, alignment, ds, config):
@@ -202,8 +203,7 @@ def set_seeds(config):
 if __name__ == "__main__":
     wandb.login()
 
-    experiment_name = 'base'
-    config = create_config(experiment_name)
+    config = create_config(sys.argv[1])
     set_seeds(config)
 
     neural_model, causal_model, ds_train, ds_test, task_criterion, iit_criterion, optimizer = prepare_training(
