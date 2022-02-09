@@ -108,11 +108,13 @@ class NeuralArithmetic2(torch.nn.Module):
         self.embed = torch.nn.Linear(
             self.onehot_width, self.model_hidden_width)
 
-        self.ff1 = torch.nn.Linear(
-            4*self.model_hidden_width, 4*self.model_hidden_width)
-
-        self.act1 = torch.nn.Tanh(
-        ) if config['activation'] == "tanh" else torch.nn.LeakyReLU()
+        layers = []
+        for i in range(config['model_hidden_layers']):
+            layers.append(torch.nn.Linear(
+                4*self.model_hidden_width, 4*self.model_hidden_width))
+            layers.append(torch.nn.Tanh()
+                          if config['activation'] == "tanh" else torch.nn.LeakyReLU())
+        self.ff1 = torch.nn.Sequential(*layers)
 
         layers = []
         for i in range(config['model_hidden_layers']):
@@ -129,6 +131,9 @@ class NeuralArithmetic2(torch.nn.Module):
             layers.append(torch.nn.Tanh()
                           if config['activation'] == "tanh" else torch.nn.LeakyReLU())
         self.ff3 = torch.nn.Sequential(*layers[:-1])
+
+        # self.act_a = torch.nn.Tanh() if config['activation'] == "tanh" else torch.nn.LeakyReLU()
+        # self.ff_a = torch.nn.Linear(self.model_hidden_width, 3*self.model_hidden_width)
 
         # some magic to easily access parts of the layers
         self.identity_w = torch.nn.Identity()
@@ -170,7 +175,7 @@ class NeuralArithmetic2(torch.nn.Module):
             x), self.identity_y(y), self.identity_z(z)
 
         x = torch.cat((w, x, y, z), dim=1)
-        x = self.act1(self.ff1(x))
+        x = self.ff1(x)
 
         # making the slices of the layers more accessible for interventions
         a, b, c, d = x[:, 0:self.model_hidden_width], x[:, self.model_hidden_width:2 * self.model_hidden_width], x[:,
@@ -191,7 +196,9 @@ class NeuralArithmetic2(torch.nn.Module):
         # making the slices of the layers more accessible for interventions
         x = self.identity_o(x)
 
-        return x, a
+        # a = self.act_a(self.ff_a(a))
+
+        return x, e
 
     def _convert_to_onehot(self, input):
         # input [batch, 1]
