@@ -36,10 +36,11 @@ class ArithmeticDataset2(torch.utils.data.Dataset):
 
         self.x = torch.randint(
             low=0, high=self.highest_number, size=(self.size, 4))
-        self.y = torch.sum(self.x, dim=1)
+        self.y_T1 = torch.sum(self.x, dim=1)
+        self.y_T2 = torch.sum(self.x[:,:3], dim=1)
 
     def __getitem__(self, index):
-        return self.x[index], self.y[index]
+        return self.x[index], self.y_T1[index], self.y_T2[index]
 
     def __len__(self):
         return self.size

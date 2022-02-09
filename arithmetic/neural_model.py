@@ -191,7 +191,7 @@ class NeuralArithmetic2(torch.nn.Module):
         # making the slices of the layers more accessible for interventions
         x = self.identity_o(x)
 
-        return x
+        return x, a
 
     def _convert_to_onehot(self, input):
         # input [batch, 1]

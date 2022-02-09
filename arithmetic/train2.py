@@ -6,14 +6,14 @@ import math
 from dataset import ArithmeticDataset2
 from causal_model import CausalArithmetic2
 from neural_model import NeuralArithmetic2
-from interventionable import Interventionable
+from interventionable import Interventionable2
 import wandb
 import pyhocon
 import time
 import sys
 
 
-def ii_accuracy(neural_model, causal_model, alignment, ds, config):
+def ii_accuracy(neural_model, causal_model, alignment, ds, config, task='1'):
     neural_model.model.eval()
 
     neural_node, causal_node = alignment
@@ -23,19 +23,25 @@ def ii_accuracy(neural_model, causal_model, alignment, ds, config):
 
     correct = 0
     for i in range(len(dl)):
-        x, y = dl.next()
-        x, y = x.to(config['device']), y.to(config['device'])
+        x, _, _ = dl.next()
+        x = x.to(config['device'])
         # get source and base
         halfway_point = math.floor(x.shape[0]/2)
 
-        x_base, y_base = x[:halfway_point], y[:halfway_point]
-        x_source, y_source = x[halfway_point:], y[halfway_point:]
+        x_base = x[:halfway_point]
+        x_source = x[halfway_point:]
 
         with torch.no_grad():
-            _, _, predict_intervention = neural_model.forward(
-                x_source, x_base, neural_node)
-            _, _, target_intervention = causal_model.forward(
-                x_source, x_base, causal_node)
+            if task == '1':
+                _, _, predict_intervention, _, _, _ = neural_model.forward(
+                    x_source, x_base, neural_node)
+                _, _, target_intervention, _, _, _ = causal_model.forward(
+                    x_source, x_base, causal_node)
+            if task == '2':
+                _, _, _, _, _, predict_intervention = neural_model.forward(
+                    x_source, x_base, neural_node)
+                _, _, _, _, _, target_intervention = causal_model.forward(
+                    x_source, x_base, causal_node)
 
             predict_labels = torch.argmax(predict_intervention, dim=1)
 
@@ -53,50 +59,72 @@ def eval(model, ds, config):
 
     task_criterion = torch.nn.CrossEntropyLoss()
 
-    predict = model.model(ds.x.to(config['device']))
-    loss = task_criterion(predict, ds.y.to(config['device']))
+    predict_T1, predict_T2 = model.model(ds.x.to(config['device']))
+    loss_T1 = task_criterion(predict_T1, ds.y_T1.to(config['device']))
+    loss_T2 = task_criterion(predict_T2, ds.y_T2.to(config['device']))
 
     model.model.train()
 
-    return loss, torch.argmax(predict, dim=1)
+    return loss_T1, torch.argmax(predict_T1, dim=1), loss_T2, torch.argmax(predict_T2, dim=1)
 
 
-def train_log(epoch, len_ds, running_task_loss, running_iit_loss):
-    task_loss = running_task_loss / (len_ds)
+def train_log(epoch, len_ds, running_T1_task_loss, running_T2_task_loss, running_iit_loss):
+    T1_task_loss = running_T1_task_loss / (len_ds)
+    T2_task_loss = running_T2_task_loss / (len_ds)
     iit_loss = running_iit_loss / (len_ds/2)
-    wandb.log({"train loss": task_loss, "iit loss": iit_loss}, step=epoch)
-    print(f'[epoch {epoch + 1}] train loss: {task_loss:.3f}')
+    wandb.log({"T1 train loss": T1_task_loss}, step=epoch)
+    wandb.log({"T2 train loss": T2_task_loss}, step=epoch)
+    wandb.log({"iit loss": iit_loss}, step=epoch)
+    print(f'[epoch {epoch + 1}] T1 train loss: {T1_task_loss:.3f}')
+    print(f'[epoch {epoch + 1}] T2 train loss: {T2_task_loss:.3f}')
     print(f'[epoch {epoch + 1}] iit loss: {iit_loss:.3f}')
 
 
 def eval_log(epoch, ds_test, neural_model, causal_model, config):
-    test_task_loss, prediction = eval(neural_model, ds_test, config)
+    test_loss_T1, prediction_T1, test_loss_T2, prediction_T2 = eval(
+        neural_model, ds_test, config)
 
-    wandb.log({"test loss": test_task_loss}, step=epoch)
-    print(f'[epoch {epoch + 1}] test loss: {test_task_loss:.3f}')
+    #wandb.log({"test loss": test_task_loss}, step=epoch)
+    print(f'[epoch {epoch + 1}] T1 test loss: {test_loss_T1:.3f}')
+    print(f'[epoch {epoch + 1}] T2 test loss: {test_loss_T2:.3f}')
 
-    for alignment in config['alignments']:
+    # TODO: eval on second alignments
+    for alignment in config['alignments1']:
         correct, acc = ii_accuracy(
-            neural_model, causal_model, alignment, ds_test, config)
-        wandb.log({f"ii  accuracy {alignment}": acc}, step=epoch)
-        print(f'[epoch {epoch + 1}] ii accuracy {alignment}: {acc:.3f}')
+            neural_model, causal_model, alignment, ds_test, config, task='1')
+        wandb.log({f"T1 ii  accuracy {alignment}": acc}, step=epoch)
+        print(f'[epoch {epoch + 1}] T1 ii accuracy {alignment}: {acc:.3f}')
 
-    test_data = list(zip(ds_test.x, ds_test.y, prediction))
-    test_columns = ["input", "true label", "predicted label"]
-    test_table = wandb.Table(data=test_data, columns=test_columns)
-    wandb.log({"test_table": test_table}, step=epoch)
+    for alignment in config['alignments2']:
+        correct, acc = ii_accuracy(
+            neural_model, causal_model, alignment, ds_test, config, task='2')
+        wandb.log({f"T2 ii  accuracy {alignment}": acc}, step=epoch)
+        print(f'[epoch {epoch + 1}] T2 ii accuracy {alignment}: {acc:.3f}')
 
-    error_data = prediction - ds_test.y.to(config['device'])
-    wandb.log({"error_histogram": wandb.Histogram(error_data.cpu())}, step=epoch)
+    # test_data = list(zip(ds_test.x, ds_test.y, prediction))
+    # test_columns = ["input", "true label", "predicted label"]
+    # test_table = wandb.Table(data=test_data, columns=test_columns)
+    #wandb.log({"test_table": test_table}, step=epoch)
 
-    accuracy = sum(prediction == ds_test.y.to(config['device']))/len(ds_test.y.to(config['device']))
-    wandb.log({"test accuracy": accuracy}, step=epoch)
+    error_data_T1 = prediction_T1 - ds_test.y_T1.to(config['device'])
+    error_data_T2 = prediction_T2 - ds_test.y_T2.to(config['device'])
+    wandb.log({"T1 error_histogram": wandb.Histogram(error_data_T1.cpu())}, step=epoch)
+    wandb.log({"T2 error_histogram": wandb.Histogram(error_data_T2.cpu())}, step=epoch)
+
+    accuracy_T1 = sum(prediction_T1 == ds_test.y_T1.to(
+        config['device']))/len(ds_test.y_T1.to(config['device']))
+    accuracy_T2 = sum(prediction_T2 == ds_test.y_T2.to(
+        config['device']))/len(ds_test.y_T2.to(config['device']))
+    wandb.log({"T1 test accuracy": accuracy_T1}, step=epoch)
+    wandb.log({"T2 test accuracy": accuracy_T2}, step=epoch)
 
 
 def prepare_training(config):
     # create causal and neural model
-    neural_model = Interventionable(NeuralArithmetic2(config).to(config['device']))
-    causal_model = Interventionable(CausalArithmetic2(config).to(config['device']))
+    neural_model = Interventionable2(
+        NeuralArithmetic2(config).to(config['device']))
+    causal_model = Interventionable2(
+        CausalArithmetic2(config).to(config['device']))
 
     print(neural_model.model)
 
@@ -120,10 +148,10 @@ def prepare_training(config):
 def train_with_interventions(neural_model, causal_model, ds_train, ds_test, task_criterion, iit_criterion, optimizer, config):
     neural_model.model.train()
 
-    wandb.watch(neural_model.model, task_criterion,
-                log="all", log_freq=config['eval_freq'])
+    wandb.watch(neural_model.model, task_criterion, log="all", log_freq=config['eval_freq'])
 
-    running_task_loss = 0.0
+    running_T1_task_loss = 0.0
+    running_T2_task_loss = 0.0
     running_iit_loss = 0.0
 
     t1 = time.time()
@@ -132,45 +160,52 @@ def train_with_interventions(neural_model, causal_model, ds_train, ds_test, task
         dl = iter(torch.utils.data.DataLoader(
             ds_train, batch_size=config['batch_size'], shuffle=True))
         for i in range(len(dl)):
-            x, y = dl.next()
-            x, y = x.to(config['device']), y.to(config['device'])
+            x, y_T1, y_T2 = dl.next()
+            x, y_T1, y_T2 = x.to(config['device']), y_T1.to(
+                config['device']), y_T2.to(config['device'])
 
             # get source and base examples
             # NOTE: ignoring the impactfulness of interventions for now
             halfway_point = math.floor(x.shape[0]/2)
 
-            x_base, y_base = x[:halfway_point], y[:halfway_point]
-            x_source, y_source = x[halfway_point:], y[halfway_point:]
+            x_base, y_T1_base, y_T2_base = x[:halfway_point], y_T1[:halfway_point], y_T2[:halfway_point]
+            x_source, y_T1_source, y_T2_source = x[halfway_point:
+                                                   ], y_T1[halfway_point:], y_T2[halfway_point:]
 
             # run intervention
-            neural_node, causal_node = random.choice(config['alignments'])
-            source_logits, base_logits, counterfactual_logits = neural_model.forward(
+            # TODO: only run interventions for an auxiliary task
+            neural_node, causal_node = random.choice(config['alignments2'])
+            source_logits_T1, base_logits_T1, _, source_logits_T2, base_logits_T2, counterfactual_logits_T2 = neural_model.forward(
                 x_source, x_base, neural_node)
             with torch.no_grad():
-                _, _, counterfactual_target = causal_model.forward(
+                _, _, _, _, _, counterfactual_target_T2 = causal_model.forward(
                     x_source, x_base, causal_node)
 
             # task loss on all seen examples
-            task_loss = task_criterion(torch.cat(
-                (source_logits, base_logits), dim=0), torch.cat((y_source, y_base), dim=0))
+            T1_task_loss = task_criterion(torch.cat(
+                (source_logits_T1, base_logits_T1), dim=0), torch.cat((y_T1_source, y_T1_base), dim=0))
+            T2_task_loss = task_criterion(torch.cat(
+                (source_logits_T2, base_logits_T2), dim=0), torch.cat((y_T2_source, y_T2_base), dim=0))
             # iit loss
             if config['iit'] == 'True':
                 iit_loss = iit_criterion(
-                    counterfactual_logits, counterfactual_target)
+                    counterfactual_logits_T2, counterfactual_target_T2)
             else:
                 iit_loss = torch.zeros((1,), device=config['device'])
             # step
             optimizer.zero_grad()
-            loss = task_loss + iit_loss
+            loss = T1_task_loss + T2_task_loss + iit_loss
             loss.backward()
             optimizer.step()
 
-            running_task_loss += task_loss.item()
+            running_T1_task_loss += T1_task_loss.item()
+            running_T2_task_loss += T2_task_loss.item()
             running_iit_loss += iit_loss.item()
 
-        train_log(epoch, len(ds_train), running_task_loss, running_iit_loss)
+        train_log(epoch, len(ds_train), running_T1_task_loss, running_T2_task_loss, running_iit_loss)
 
-        running_task_loss = 0.0
+        running_T1_task_loss = 0.0
+        running_T2_task_loss = 0.0
         running_iit_loss = 0.0
 
         if epoch % config['eval_freq'] == 0:
@@ -212,7 +247,9 @@ if __name__ == "__main__":
     neural_model, causal_model, ds_train, ds_test, task_criterion, iit_criterion, optimizer = prepare_training(
         config)
 
-    with wandb.init(project='causal-arithmetic', entity='stanford-causality', config=config):
+    with wandb.init(project='causal-arithmetic-multiIIT', entity='stanford-causality', config=config):
         config = wandb.config
         train_with_interventions(
             neural_model, causal_model, ds_train, ds_test, task_criterion, iit_criterion, optimizer, config)
+    # train_with_interventions(
+    #     neural_model, causal_model, ds_train, ds_test, task_criterion, iit_criterion, optimizer, config)

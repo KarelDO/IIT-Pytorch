@@ -67,4 +67,4 @@ class CausalArithmetic2(torch.nn.Module):
         S2 = self.S2(S1 + C1)
         C3 = self.C3(C2)
         O = self.O(S2 + C3)
-        return O
+        return O, S2
