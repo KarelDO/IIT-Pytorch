@@ -182,8 +182,12 @@ def train_with_interventions(neural_model, causal_model, ds_train, ds_test, task
                     x_source, x_base, causal_node)
 
             # task loss on all seen examples
-            T1_task_loss = task_criterion(torch.cat(
-                (source_logits_T1, base_logits_T1), dim=0), torch.cat((y_T1_source, y_T1_base), dim=0))
+            if config['T1_delay'] and epoch < config['T1_delay']:
+                T1_task_loss = torch.zeros((1,), device=config['device'])
+            else:
+                T1_task_loss = task_criterion(torch.cat(
+                    (source_logits_T1, base_logits_T1), dim=0), torch.cat((y_T1_source, y_T1_base), dim=0))
+
             T2_task_loss = task_criterion(torch.cat(
                 (source_logits_T2, base_logits_T2), dim=0), torch.cat((y_T2_source, y_T2_base), dim=0))
             # iit loss
@@ -198,7 +202,7 @@ def train_with_interventions(neural_model, causal_model, ds_train, ds_test, task
                 reg_loss = sum(p.abs().sum() for p in neural_model.model.parameters())
                 reg_loss *= config['reg_alpha']
             else:
-                reg_loss = torch.Tensor(0.0)
+                reg_loss = torch.zeros((1,), device=config['device'])
             
             # step
             optimizer.zero_grad()
@@ -210,7 +214,6 @@ def train_with_interventions(neural_model, causal_model, ds_train, ds_test, task
             running_T2_task_loss += T2_task_loss.item()
             running_iit_loss += iit_loss.item()
 
-        print("reg loss: ", reg_loss)
         train_log(epoch, len(ds_train), running_T1_task_loss, running_T2_task_loss, running_iit_loss)
 
         running_T1_task_loss = 0.0
