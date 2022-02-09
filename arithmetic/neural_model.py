@@ -132,8 +132,8 @@ class NeuralArithmetic2(torch.nn.Module):
                           if config['activation'] == "tanh" else torch.nn.LeakyReLU())
         self.ff3 = torch.nn.Sequential(*layers[:-1])
 
-        # self.act_a = torch.nn.Tanh() if config['activation'] == "tanh" else torch.nn.LeakyReLU()
-        # self.ff_a = torch.nn.Linear(self.model_hidden_width, 3*self.model_hidden_width)
+        self.act_e = torch.nn.Tanh() if config['activation'] == "tanh" else torch.nn.LeakyReLU()
+        self.ff_e = torch.nn.Linear(self.model_hidden_width, 3*self.model_hidden_width)
 
         # some magic to easily access parts of the layers
         self.identity_w = torch.nn.Identity()
@@ -196,7 +196,7 @@ class NeuralArithmetic2(torch.nn.Module):
         # making the slices of the layers more accessible for interventions
         x = self.identity_o(x)
 
-        # a = self.act_a(self.ff_a(a))
+        e = self.act_e(self.ff_e(e))
 
         return x, e
 
