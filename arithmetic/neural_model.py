@@ -133,7 +133,7 @@ class NeuralArithmetic2(torch.nn.Module):
         self.ff3 = torch.nn.Sequential(*layers[:-1])
 
         self.act_e = torch.nn.Tanh() if config['activation'] == "tanh" else torch.nn.LeakyReLU()
-        self.ff_e = torch.nn.Linear(2*self.model_hidden_width, 3*self.model_hidden_width)
+        self.ff_e = torch.nn.Linear(self.model_hidden_width, 3*self.model_hidden_width)
 
         # some magic to easily access parts of the layers
         self.identity_w = torch.nn.Identity()
@@ -178,17 +178,18 @@ class NeuralArithmetic2(torch.nn.Module):
         x = self.ff1(x)
 
         # making the slices of the layers more accessible for interventions
-        a, b, x = x[:, 0:2*self.model_hidden_width], x[:, 2*self.model_hidden_width:3 * self.model_hidden_width], x[:, 3 * self.model_hidden_width:]
-        a, b = self.identity_a(a), self.identity_b(b)
-        x = torch.cat((a, b, x), dim=1)
+        a, b, c, d = x[:, 0:self.model_hidden_width], x[:, self.model_hidden_width:2 * self.model_hidden_width], x[:,
+                                                                                                                   2*self.model_hidden_width:3*self.model_hidden_width], x[:, 3*self.model_hidden_width:4*self.model_hidden_width]
+        a, b, c, d = self.identity_a(a), self.identity_b(b), self.identity_c(c), self.identity_d(d)
+        x = torch.cat((a, b, c, d), dim=1)
 
         x = self.ff2(x)
 
         # making the slices of the layers more accessible for interventions
-        e, f, x = x[:, 0:2*self.model_hidden_width], x[:, 2*self.model_hidden_width:3 *
-                                                     self.model_hidden_width], x[:, 3*self.model_hidden_width:]
-        e, f = self.identity_e(e), self.identity_f(f)
-        x = torch.cat((e, f, x), dim=1)
+        e, f, g, h = x[:, 0:self.model_hidden_width], x[:, self.model_hidden_width:2 *
+                                                     self.model_hidden_width], x[:, 2*self.model_hidden_width:3*self.model_hidden_width],x[:, 3*self.model_hidden_width:4*self.model_hidden_width]
+        e, f, g, h = self.identity_e(e), self.identity_f(f),self.identity_g(g), self.identity_h(h)
+        x = torch.cat((e, f, g, h), dim=1)
 
         x = self.ff3(x)
 
