@@ -192,9 +192,17 @@ def train_with_interventions(neural_model, causal_model, ds_train, ds_test, task
                     counterfactual_logits_T2, counterfactual_target_T2)
             else:
                 iit_loss = torch.zeros((1,), device=config['device'])
+
+            # regularization
+            if config['reg'] == 'l1':
+                reg_loss = sum(p.abs().sum() for p in neural_model.model.parameters())
+                reg_loss *= config['reg_alpha']
+            else:
+                reg_loss = torch.Tensor(0.0)
+            
             # step
             optimizer.zero_grad()
-            loss = T1_task_loss + T2_task_loss + iit_loss
+            loss = T1_task_loss + T2_task_loss + iit_loss + reg_loss
             loss.backward()
             optimizer.step()
 
@@ -202,6 +210,7 @@ def train_with_interventions(neural_model, causal_model, ds_train, ds_test, task
             running_T2_task_loss += T2_task_loss.item()
             running_iit_loss += iit_loss.item()
 
+        print("reg loss: ", reg_loss)
         train_log(epoch, len(ds_train), running_T1_task_loss, running_T2_task_loss, running_iit_loss)
 
         running_T1_task_loss = 0.0
