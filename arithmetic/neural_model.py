@@ -179,7 +179,7 @@ class NeuralArithmetic2(torch.nn.Module):
 
         # making the slices of the layers more accessible for interventions
         a, b, x = x[:, 0:2*self.model_hidden_width], x[:, 2*self.model_hidden_width:3 * self.model_hidden_width], x[:, 3 * self.model_hidden_width:]
-        a, b, x = self.identity_a(a), self.identity_b(b)
+        a, b = self.identity_a(a), self.identity_b(b)
         x = torch.cat((a, b, x), dim=1)
 
         x = self.ff2(x)
@@ -187,7 +187,7 @@ class NeuralArithmetic2(torch.nn.Module):
         # making the slices of the layers more accessible for interventions
         e, f, x = x[:, 0:2*self.model_hidden_width], x[:, 2*self.model_hidden_width:3 *
                                                      self.model_hidden_width], x[:, 3*self.model_hidden_width:]
-        e, f, x = self.identity_e(e), self.identity_f(f)
+        e, f = self.identity_e(e), self.identity_f(f)
         x = torch.cat((e, f, x), dim=1)
 
         x = self.ff3(x)
