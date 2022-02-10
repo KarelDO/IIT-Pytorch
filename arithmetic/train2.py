@@ -130,9 +130,9 @@ def prepare_training(config):
 
     # create test and train set
     ds_train = ArithmeticDataset2(
-        size=config['dataset_train_size'], highest_number=config['dataset_highest_number'])
+        size=config['dataset_train_size'], highest_number=config['dataset_highest_number'], seed=config['seed'])
     ds_test = ArithmeticDataset2(
-        size=config['dataset_test_size'], highest_number=config['dataset_highest_number'])
+        size=config['dataset_test_size'], highest_number=config['dataset_highest_number'], seed=config['seed'])
 
     # criterions
     task_criterion = torch.nn.CrossEntropyLoss()

@@ -24,15 +24,16 @@ class ArithmeticDataset(torch.utils.data.Dataset):
 
 
 class ArithmeticDataset2(torch.utils.data.Dataset):
-    def __init__(self, size=1000, highest_number=33):
+    def __init__(self, size=1000, highest_number=33, seed=42):
         # NOTE: the y label is not uniformly distributed
         super().__init__()
 
         self.size = size
         self.highest_number = highest_number
+        self.seed = 42
 
         # generate a synthetic dataset
-        torch.manual_seed(42)
+        torch.manual_seed(self.seed)
 
         self.x = torch.randint(
             low=0, high=self.highest_number, size=(self.size, 4))
