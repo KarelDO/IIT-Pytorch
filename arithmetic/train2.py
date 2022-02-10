@@ -182,12 +182,18 @@ def train_with_interventions(neural_model, causal_model, ds_train, ds_test, task
                     x_source, x_base, causal_node)
 
             # task loss on all seen examples
-            if config['T1_delay'] and epoch < config['T1_delay']:
+            if 'T1_delay' in config and epoch < config['T1_delay']:
                 T1_task_loss = torch.zeros((1,), device=config['device'])
             else:
                 T1_task_loss = task_criterion(torch.cat(
                     (source_logits_T1, base_logits_T1), dim=0), torch.cat((y_T1_source, y_T1_base), dim=0))
 
+            if 'T1_warmup' in config and config['T1_delay'] and epoch >= config['T1_delay']:
+                warmup = min((epoch-config['T1_delay'])/config['T1_warmup'],1.0)
+            else:
+                warmup = 1.0
+            T1_task_loss *= warmup
+            
             T2_task_loss = task_criterion(torch.cat(
                 (source_logits_T2, base_logits_T2), dim=0), torch.cat((y_T2_source, y_T2_base), dim=0))
             # iit loss
