@@ -2,3 +2,4 @@ torch==1.10.2
 transformers==4.16.2
 wandb==0.12.10
 pyhocon==0.3.59
+nltk==3.7
