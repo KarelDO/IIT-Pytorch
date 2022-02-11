@@ -7,6 +7,7 @@ from dataset import ArithmeticDataset2
 from causal_model import CausalArithmetic2
 from neural_model import NeuralArithmetic2
 from interventionable import Interventionable2
+from test_dataset import check_overlap
 import wandb
 import pyhocon
 import time
@@ -132,7 +133,9 @@ def prepare_training(config):
     ds_train = ArithmeticDataset2(
         size=config['dataset_train_size'], highest_number=config['dataset_highest_number'], seed=config['seed'])
     ds_test = ArithmeticDataset2(
-        size=config['dataset_test_size'], highest_number=config['dataset_highest_number'], seed=config['seed'])
+        size=config['dataset_test_size'], highest_number=config['dataset_highest_number'], seed=config['seed']+1)
+
+    print("database overlap: ",check_overlap(ds_train, ds_test) )
 
     # criterions
     task_criterion = torch.nn.CrossEntropyLoss()
@@ -204,7 +207,7 @@ def train_with_interventions(neural_model, causal_model, ds_train, ds_test, task
                 iit_loss = torch.zeros((1,), device=config['device'])
 
             # regularization
-            if config['reg'] == 'l1':
+            if 'reg' in config and config['reg'] == 'l1':
                 reg_loss = sum(p.abs().sum() for p in neural_model.model.parameters())
                 reg_loss *= config['reg_alpha']
             else:

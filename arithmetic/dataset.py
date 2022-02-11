@@ -10,6 +10,7 @@ class ArithmeticDataset(torch.utils.data.Dataset):
         self.highest_number = highest_number
 
         # generate a synthetic dataset
+        # TODO: change this
         torch.manual_seed(42)
 
         self.x = torch.randint(
@@ -30,7 +31,7 @@ class ArithmeticDataset2(torch.utils.data.Dataset):
 
         self.size = size
         self.highest_number = highest_number
-        self.seed = 42
+        self.seed = seed
 
         # generate a synthetic dataset
         torch.manual_seed(self.seed)
