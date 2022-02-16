@@ -1,4 +1,3 @@
-from turtle import forward
 import torch
 
 
@@ -133,6 +132,7 @@ class NeuralArithmetic2(torch.nn.Module):
         self.ff3 = torch.nn.Sequential(*layers[:-1])
 
         self.act_e = torch.nn.Tanh() if config['activation'] == "tanh" else torch.nn.LeakyReLU()
+        # NOTE: using self.model_hidden_width is probably wrong. We should go for 3*onehot_width
         self.ff_e = torch.nn.Linear(self.model_hidden_width, 3*self.model_hidden_width)
 
         # some magic to easily access parts of the layers
