@@ -23,4 +23,8 @@ Manipulating the computational graph using the forward hooks can cause errors du
 
 ## Arithmetic
 
+- `train.py`: Summing digits. Training the alignment on the entire causal graph.
+- `train2.py`: Summing digits. Training the alignment on a part of the causal graph. Uses `experiments.conf` as config.
+- `train3.py`: Same as `train2.py` but with a Transformer. Uses `experiments3.conf` as config.
+
 

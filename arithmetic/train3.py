@@ -261,7 +261,7 @@ def train_with_interventions(neural_model, causal_model, ds_train, ds_test, task
 
 def create_config(experiment_name):
     config = pyhocon.ConfigFactory.parse_file(
-        "arithmetic/experiments3.conf")[experiment_name]
+        "./experiments3.conf")[experiment_name]
     config['device'] = torch.device(
         config['device'] if torch.cuda.is_available() else "cpu")
 
